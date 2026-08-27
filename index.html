@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>هوش مصنوعی قره‌مهدی</title>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    *{box-sizing:border-box;font-family:Vazirmatn,Tahoma,sans-serif}
+    html,body{margin:0;height:100%;background:#121212;color:#f2f0ea}
+    button,input,textarea{font:inherit}
+    .hidden{display:none!important}
+    .auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;position:relative;overflow:hidden;background:radial-gradient(ellipse at 30% 20%,#1a2a2a,#0d0d0d)}
+    .glow{position:absolute;width:300px;height:300px;border-radius:50%;filter:blur(100px);opacity:.15}
+    .glow-1{background:#2fbfae;top:-100px;right:-100px}.glow-2{background:#cba135;bottom:-100px;left:-100px}
+    .auth-card-wrap{position:relative;width:100%;max-width:400px;z-index:2}
+    .brand{text-align:center;margin-bottom:25px}.brand h1{font-size:26px;margin:8px 0;font-weight:800;background:linear-gradient(135deg,#2fbfae,#cba135);-webkit-background-clip:text;color:transparent}
+    .logo{width:72px;height:72px;margin:auto;border-radius:22px;border:1px solid #315b56;display:grid;place-items:center;background:#18211f;box-shadow:0 0 35px #2fbfae22;font-size:32px}
+    .auth-card{background:#1a1a1aeF;border:1px solid #2a2a2e;border-radius:20px;padding:28px;box-shadow:0 30px 80px #0009}
+    .auth-card h2{text-align:center;font-size:18px;margin:0 0 20px}
+    label{display:block;color:#9b9b9b;font-size:12px;margin:0 0 5px}
+    input,textarea{outline:none}.auth-card input{width:100%;background:#141416;border:1px solid #2a2a2e;border-radius:10px;padding:11px 12px;color:#f2f0ea;margin-bottom:14px}
+    .auth-card input:focus{border-color:#2fbfae;box-shadow:0 0 0 3px #2fbfae22}
+    .error-text{color:#e5695b;font-size:12px;min-height:18px;text-align:center;margin:-4px 0 7px;line-height:1.7}
+    .success-text{color:#2fbfae;font-size:12px;text-align:center}
+    .global-error-banner{background:#2a1414;border:1px solid #e5695b;color:#ffb4ab;border-radius:10px;padding:10px 14px;font-size:12px;line-height:1.8;margin-bottom:16px}
+    .btn{border:0;border-radius:10px;padding:11px;width:100%;cursor:pointer;transition:.2s;font-weight:700}
+    .btn:disabled{opacity:.55;cursor:not-allowed}.btn-primary{background:linear-gradient(135deg,#2fbfae,#1d8a7d);color:#0e1413;margin-top:6px}
+    .gold-btn{background:linear-gradient(135deg,#cba135,#a8852a);color:#151206}
+    .btn-link{background:none;border:0;cursor:pointer;width:100%;padding:9px;margin-top:8px;font-size:13px}.gold{color:#cba135}.teal{color:#2fbfae}.red{color:#e5695b}
+    .chat-screen{height:100vh;display:flex;overflow:hidden}.sidebar{position:fixed;right:0;top:0;height:100%;width:280px;background:#17171a;border-left:1px solid #2a2a2e;display:flex;flex-direction:column;z-index:30}
+    .sidebar-header{padding:16px;border-bottom:1px solid #2a2a2e;font-weight:700}.new-chat-btn{width:calc(100% - 24px);margin:12px}
+    .chat-list{flex:1;overflow:auto;padding:4px 8px}.chat-item{display:flex;justify-content:space-between;gap:8px;padding:10px 12px;border-radius:10px;color:#a9a9ac;font-size:13px;cursor:pointer;margin-bottom:3px}.chat-item:hover,.chat-item.active{background:#22262b;color:#f2f0ea}.chat-item .title{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chat-item .del{background:none;border:0;color:#777;cursor:pointer}
+    .sidebar-footer{border-top:1px solid #2a2a2e;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}.sidebar-footer span{font-size:12px;color:#9b9b9b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .main-panel{flex:1;display:flex;flex-direction:column;min-width:0;margin-right:280px}.main-header{height:55px;display:flex;align-items:center;gap:10px;padding:12px 20px;border-bottom:1px solid #2a2a2e;background:#141416}.menu-btn{display:none;background:#141416;border:1px solid #2a2a2e;color:#fff;border-radius:8px;padding:5px 10px}.site-title{font-weight:700;font-size:15px}.chat-title-label{margin-right:auto;color:#6b6b70;font-size:12px}
+    .messages{flex:1;overflow:auto;padding:24px 20px}.messages-inner{max-width:680px;margin:auto;display:flex;flex-direction:column;gap:14px}.bubble-row{display:flex}.bubble-row.user{justify-content:flex-start}.bubble-row.assistant{justify-content:flex-end}.bubble{max-width:78%;padding:12px 16px;border-radius:16px;font-size:14px;line-height:1.9;white-space:pre-wrap;word-break:break-word}.bubble.user{background:#1e2a29;border:1px solid #274a46}.bubble.assistant{background:#1c1c1f;border:1px solid #2a2a2e}.error-bubble{background:#2a1414;border:1px solid #4a2323;color:#e5695b;border-radius:10px;padding:8px 12px;font-size:12px;text-align:center}
+    .composer{border-top:1px solid #2a2a2e;background:#141416;padding:12px 20px}.composer-inner{max-width:680px;margin:auto;display:flex;align-items:flex-end;gap:6px;background:#1c1c1f;border:1px solid #2a2a2e;border-radius:20px;padding:8px}.icon-btn{background:none;border:0;width:36px;height:36px;border-radius:50%;cursor:pointer}.icon-btn:hover{background:#141416}#messageInput{flex:1;background:transparent;border:0;resize:none;color:#f2f0ea;padding:8px 4px;max-height:130px}.send-btn{width:38px;height:38px;border:0;border-radius:50%;background:#2fbfae;cursor:pointer}
+    @media(max-width:860px){.sidebar{transform:translateX(100%);transition:.2s}.sidebar.open{transform:translateX(0)}.main-panel{margin-right:0}.menu-btn{display:inline-block}.sidebar-overlay{position:fixed;inset:0;background:#0008;z-index:20}.bubble{max-width:88%}}
+  </style>
+</head>
+<body>
+
+<section id="authScreen" class="auth-screen">
+  <div class="glow glow-1"></div><div class="glow glow-2"></div>
+  <div class="auth-card-wrap">
+    <div class="brand"><div class="logo">✦</div><h1>هوش مصنوعی قره‌مهدی</h1></div>
+    <div id="globalErrorBanner" class="global-error-banner hidden"></div>
+
+    <div class="auth-card">
+      <div id="loginForm">
+        <h2>ورود به حساب</h2>
+        <label>نام کاربری</label>
+        <input id="loginUsername" type="text" autocomplete="username" placeholder="نام کاربری">
+        <label>رمز عبور</label>
+        <input id="loginPassword" type="password" autocomplete="current-password" placeholder="رمز عبور">
+        <p id="loginError" class="error-text"></p>
+        <button id="loginBtn" class="btn btn-primary">ورود</button>
+        <button id="showSignupBtn" class="btn-link gold">ساخت حساب کاربری جدید</button>
+      </div>
+
+      <div id="signupForm" class="hidden">
+        <h2>ساخت حساب کاربری</h2>
+        <label>نام و نام خانوادگی</label>
+        <input id="signupName" type="text" placeholder="مثلاً: مهدی">
+        <label>نام کاربری</label>
+        <input id="signupUsername" type="text" autocomplete="username" placeholder="حداقل ۳ کاراکتر انگلیسی">
+        <label>رمز عبور</label>
+        <input id="signupPassword" type="password" autocomplete="new-password" placeholder="حداقل ۶ کاراکتر">
+        <label>تکرار رمز عبور</label>
+        <input id="signupConfirm" type="password" autocomplete="new-password" placeholder="تکرار رمز عبور">
+        <p id="signupError" class="error-text"></p>
+        <button id="signupBtn" class="btn gold-btn">ساخت حساب</button>
+        <button id="showLoginBtn" class="btn-link teal">حساب دارید؟ وارد شوید</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="chatScreen" class="chat-screen hidden">
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">✦ قره‌مهدی</div>
+    <button id="newChatBtn" class="btn btn-primary new-chat-btn">+ چت جدید</button>
+    <div id="chatList" class="chat-list"></div>
+    <div class="sidebar-footer"><span id="userNameLabel"></span><button id="logoutBtn" class="btn-link red" style="width:auto">خروج</button></div>
+  </aside>
+  <div id="sidebarOverlay" class="sidebar-overlay hidden"></div>
+  <main class="main-panel">
+    <header class="main-header"><button id="menuBtn" class="menu-btn">☰</button><span class="site-title">هوش مصنوعی قره‌مهدی</span><span id="chatTitleLabel" class="chat-title-label"></span></header>
+    <div id="messages" class="messages"></div>
+    <div class="composer">
+      <div class="composer-inner">
+        <textarea id="messageInput" rows="1" placeholder="پیام خود را بنویسید..."></textarea>
+        <button id="sendBtn" class="send-btn">➤</button>
+      </div>
+    </div>
+  </main>
+</section>
+
+<script>
+"use strict";
+
+const el = id => document.getElementById(id);
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAeios0PUGm7M6mElKsCrkfUcGifHVtXnk",
+  authDomain: "karemahdi-ai.firebaseapp.com",
+  projectId: "karemahdi-ai",
+  storageBucket: "karemahdi-ai.firebasestorage.app",
+  messagingSenderId: "794552403834",
+  appId: "1:794552403834:web:4b239ba35b6587e73b38c3",
+  measurementId: "G-J4EC2J2C2W"
+};
+
+const EMAIL_DOMAIN = "@karemahdi.local";
+
+let auth = null;
+let db = null;
+let firebaseReady = false;
+
+const state = {
+  user: null,
+  chats: [],
+  currentChatId: null,
+  sending: false
+};
+
+function showGlobalError(message) {
+  const box = el("globalErrorBanner");
+  if (!box) return console.error(message);
+  box.textContent = message;
+  box.classList.remove("hidden");
+}
+
+function clearGlobalError() {
+  el("globalErrorBanner")?.classList.add("hidden");
+}
+
+function normalizeUsername(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function usernameEmail(username) {
+  return normalizeUsername(username) + EMAIL_DOMAIN;
+}
+
+function firebaseError(err) {
+  const code = err?.code || "";
+  const messages = {
+    "auth/email-already-in-use": "این نام کاربری قبلاً استفاده شده است.",
+    "auth/weak-password": "رمز عبور باید حداقل ۶ کاراکتر باشد.",
+    "auth/invalid-email": "نام کاربری واردشده قابل استفاده نیست.",
+    "auth/operation-not-allowed": "ورود با Email/Password در Firebase فعال نشده است.",
+    "auth/unauthorized-domain": "دامنه سایت در Firebase مجاز نشده است. Authorized domains را بررسی کن.",
+    "auth/network-request-failed": "ارتباط با Firebase برقرار نشد. اینترنت را بررسی کن.",
+    "auth/invalid-credential": "نام کاربری یا رمز عبور اشتباه است.",
+    "auth/user-not-found": "نام کاربری یا رمز عبور اشتباه است.",
+    "auth/wrong-password": "نام کاربری یا رمز عبور اشتباه است.",
+    "permission-denied": "Firestore اجازه این عملیات را نمی‌دهد. Firestore Rules را بررسی کن.",
+    "failed-precondition": "تنظیمات یا ایندکس موردنیاز Firebase آماده نیست."
+  };
+  return messages[code] || err?.message || "خطای ناشناخته";
+}
+
+function requireFirebase() {
+  if (!firebaseReady) {
+    showGlobalError("Firebase در دسترس نیست. اتصال اینترنت و تنظیمات Firebase را بررسی کن.");
+    return false;
+  }
+  return true;
+}
+
+function showAuth() {
+  el("authScreen").classList.remove("hidden");
+  el("chatScreen").classList.add("hidden");
+}
+
+function showChat() {
+  el("authScreen").classList.add("hidden");
+  el("chatScreen").classList.remove("hidden");
+  el("userNameLabel").textContent = state.user?.displayName || "کاربر";
+}
+
+async function initFirebase() {
+  try {
+    if (typeof firebase === "undefined") throw new Error("کتابخانه Firebase بارگذاری نشده است.");
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.firestore();
+    firebaseReady = true;
+  } catch (err) {
+    firebaseReady = false;
+    showGlobalError("اتصال به Firebase برقرار نشد: " + err.message);
+  }
+}
+
+function validateUsername(username) {
+  if (username.length < 3) return "نام کاربری باید حداقل ۳ کاراکتر باشد.";
+  if (!/^[a-z0-9._-]+$/.test(username))
+    return "نام کاربری فقط باید شامل حروف انگلیسی، عدد، نقطه، خط تیره یا زیرخط باشد.";
+  return "";
+}
+
+/* ---------------- فرم‌ها ---------------- */
+
+el("showSignupBtn").onclick = () => {
+  clearGlobalError();
+  el("loginForm").classList.add("hidden");
+  el("signupForm").classList.remove("hidden");
+  el("loginError").textContent = "";
+};
+
+el("showLoginBtn").onclick = () => {
+  clearGlobalError();
+  el("signupForm").classList.add("hidden");
+  el("loginForm").classList.remove("hidden");
+  el("signupError").textContent = "";
+};
+
+/* ---------------- ثبت‌نام ----------------
+   نکته مهم:
+   دیگر قبل از Authentication هیچ queryای به Firestore نمی‌فرستیم.
+   یکتا بودن username را خود Firebase Authentication با
+   username@karemahdi.local کنترل می‌کند.
+*/
+el("signupBtn").onclick = async () => {
+  if (!requireFirebase()) return;
+
+  const name = el("signupName").value.trim();
+  const username = normalizeUsername(el("signupUsername").value);
+  const password = el("signupPassword").value;
+  const confirm = el("signupConfirm").value;
+  const errorEl = el("signupError");
+  const btn = el("signupBtn");
+
+  errorEl.textContent = "";
+  btn.disabled = true;
+  btn.textContent = "در حال ساخت حساب...";
+
+  let createdUser = null;
+
+  try {
+    if (!name || !username || !password || !confirm) {
+      throw new Error("همه فیلدها الزامی هستند.");
+    }
+
+    const usernameError = validateUsername(username);
+    if (usernameError) throw new Error(usernameError);
+
+    if (password.length < 6) {
+      throw new Error("رمز عبور باید حداقل ۶ کاراکتر باشد.");
+    }
+
+    if (password !== confirm) {
+      throw new Error("رمز عبور و تکرار آن یکسان نیستند.");
+    }
+
+    const email = usernameEmail(username);
+
+    btn.textContent = "در حال ساخت حساب در Firebase...";
+
+    // مرحله اصلی ثبت‌نام؛ بدون هیچ درخواست Firestore قبل از Auth
+    const cred = await auth.createUserWithEmailAndPassword(email, password);
+    createdUser = cred.user;
+
+    await createdUser.updateProfile({ displayName: name });
+
+    btn.textContent = "در حال ذخیره اطلاعات...";
+
+    // حساب Firebase همین الان ساخته شده است.
+    // ذخیره پروفایل در Firestore جداست؛ اگر Rules/اتصال Firestore
+    // مشکل داشته باشد، نباید حساب ساخته‌شده حذف شود و نباید کاربر
+    // به صفحه ورود برگردد.
+    try {
+      await withTimeout(
+        db.collection("users").doc(createdUser.uid).set({
+          uid: createdUser.uid,
+          name: name,
+          username: username,
+          email: email,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }),
+        8000,
+        "ذخیره پروفایل در Firestore بیشتر از حد معمول طول کشید."
+      );
+    } catch (profileErr) {
+      console.error("PROFILE SAVE ERROR:", profileErr);
+    }
+
+    // مهم: بعد از ساخت Auth، کاربر مستقیم وارد حساب خودش می‌شود.
+    // حتی اگر Firestore نتوانسته باشد پروفایل را ذخیره کند.
+    state.user = createdUser;
+
+    localStorage.setItem("karemahdi_session", JSON.stringify({
+      uid: createdUser.uid,
+      username: username,
+      name: name
+    }));
+
+    el("signupName").value = "";
+    el("signupUsername").value = "";
+    el("signupPassword").value = "";
+    el("signupConfirm").value = "";
+
+    showChat();
+    renderChatList();
+    renderMessages();
+
+    // خطای ذخیره پروفایل به کاربر نمایش داده نمی‌شود.
+    // حساب با موفقیت ساخته شده و مستقیم وارد می‌شود.
+
+    // ساخت چت اولیه بعد از ورود؛ نباید جلوی ورود را بگیرد.
+    createNewChat().then(() => {
+      renderChatList();
+      renderMessages();
+    }).catch(chatErr => {
+      console.error("First chat error:", chatErr);
+    });
+
+  } catch (err) {
+    console.error("SIGNUP ERROR:", err);
+
+    // اگر Firebase Authentication حساب را ساخته باشد، آن حساب را حذف نمی‌کنیم.
+    // کاربر باید بتواند مستقیم وارد حساب تازه‌ساخته‌شده شود.
+    if (err?.message) {
+      errorEl.textContent = err.message.startsWith("Firebase")
+        ? err.message
+        : "خطا: " + firebaseError(err);
+    } else {
+      errorEl.textContent = "خطا: " + firebaseError(err);
+    }
+
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "ساخت حساب";
+  }
+};
+
+/* ---------------- ورود ----------------
+   ورود مستقیماً از Firebase Auth انجام می‌شود؛
+   دیگر passwordHash در Firestore لازم نیست.
+*/
+el("loginBtn").onclick = async () => {
+  if (!requireFirebase()) return;
+
+  const username = normalizeUsername(el("loginUsername").value);
+  const password = el("loginPassword").value;
+  const errorEl = el("loginError");
+  const btn = el("loginBtn");
+
+  errorEl.textContent = "";
+  btn.disabled = true;
+  btn.textContent = "در حال ورود...";
+
+  try {
+    if (!username || !password) throw new Error("نام کاربری و رمز عبور را وارد کنید.");
+
+    const usernameError = validateUsername(username);
+    if (usernameError) throw new Error(usernameError);
+
+    const cred = await auth.signInWithEmailAndPassword(
+      usernameEmail(username),
+      password
+    );
+
+    state.user = cred.user;
+
+    localStorage.setItem("karemahdi_session", JSON.stringify({
+      uid: cred.user.uid,
+      username: username
+    }));
+
+    el("loginUsername").value = "";
+    el("loginPassword").value = "";
+
+    // ورود Firebase موفق شده؛ صفحه را همین حالا نمایش بده.
+    // خواندن چت‌ها نباید باعث شود دکمه روی «در حال ورود...» گیر کند.
+    showChat();
+    renderChatList();
+    renderMessages();
+
+    loadUserChats()
+      .then(() => {
+        renderChatList();
+        renderMessages();
+      })
+      .catch(err => {
+        console.error("LOAD CHATS ERROR:", err);
+      });
+
+  } catch (err) {
+    console.error("LOGIN ERROR:", err);
+    errorEl.textContent = "خطا: " + firebaseError(err);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "ورود";
+  }
+};
+
+/* ---------------- خروج ---------------- */
+
+el("logoutBtn").onclick = async () => {
+  try {
+    if (auth) await auth.signOut();
+  } catch (err) {
+    showGlobalError("خطا هنگام خروج: " + firebaseError(err));
+  }
+  localStorage.removeItem("karemahdi_session");
+  state.user = null;
+  state.chats = [];
+  state.currentChatId = null;
+  showAuth();
+};
+
+/* ---------------- چت‌ها ---------------- */
+
+function withTimeout(promise, ms, message) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(message)), ms)
+    )
+  ]);
+}
+
+async function loadUserChats() {
+  if (!state.user || !db) return;
+
+  const snapshot = await withTimeout(
+    db.collection("chats")
+      .where("userId", "==", state.user.uid)
+      .get(),
+    8000,
+    "زمان اتصال به Firestore تمام شد."
+  );
+
+  state.chats = [];
+
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    state.chats.push({
+      id: doc.id,
+      title: data.title || "گفتگوی جدید",
+      messages: Array.isArray(data.messages) ? data.messages : [],
+      updatedAt: data.updatedAt?.toDate?.() || new Date()
+    });
+  });
+
+  state.chats.sort((a,b) => b.updatedAt - a.updatedAt);
+
+  if (!state.chats.length) {
+    await createNewChat();
+  } else {
+    state.currentChatId = state.chats[0].id;
+  }
+}
+
+async function saveCurrentChat() {
+  const chat = currentChat();
+  if (!chat || !state.user || !db) return;
+
+  await withTimeout(
+    db.collection("chats").doc(chat.id).set({
+      userId: state.user.uid,
+      title: chat.title,
+      messages: chat.messages,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true }),
+    8000,
+    "ذخیره چت بیشتر از حد معمول طول کشید."
+  );
+}
+
+async function createNewChat() {
+  if (!state.user || !db) return;
+
+  const ref = db.collection("chats").doc();
+  const chat = {
+    id: ref.id,
+    title: "گفتگوی جدید",
+    messages: [{
+      id: Date.now().toString(36),
+      role: "assistant",
+      text: `سلام ${state.user.displayName || "کاربر"} 👋 من قره‌مهدی هستم. هر سوالی داری بپرس.`,
+      isGreeting: true,
+      timestamp: Date.now()
+    }]
+  };
+
+  state.chats.unshift(chat);
+  state.currentChatId = chat.id;
+
+  await saveCurrentChat();
+  renderChatList();
+  renderMessages();
+}
+
+el("newChatBtn").onclick = async () => {
+  try {
+    await createNewChat();
+  } catch (err) {
+    showGlobalError("ساخت چت جدید ناموفق بود: " + firebaseError(err));
+  }
+};
+
+function currentChat() {
+  return state.chats.find(c => c.id === state.currentChatId) || null;
+}
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+function renderChatList() {
+  const list = el("chatList");
+  list.innerHTML = "";
+
+  state.chats.forEach(chat => {
+    const item = document.createElement("div");
+    item.className = "chat-item" + (chat.id === state.currentChatId ? " active" : "");
+    item.innerHTML = `<span class="title"></span><button class="del">✕</button>`;
+    item.querySelector(".title").textContent = chat.title;
+
+    item.onclick = () => {
+      state.currentChatId = chat.id;
+      renderChatList();
+      renderMessages();
+      closeSidebar();
+    };
+
+    item.querySelector(".del").onclick = async e => {
+      e.stopPropagation();
+      if (!confirm("این گفتگو حذف شود؟")) return;
+
+      try {
+        await db.collection("chats").doc(chat.id).delete();
+        state.chats = state.chats.filter(c => c.id !== chat.id);
+        if (state.currentChatId === chat.id) {
+          state.currentChatId = state.chats[0]?.id || null;
+          if (!state.currentChatId) await createNewChat();
+        }
+        renderChatList();
+        renderMessages();
+      } catch (err) {
+        showGlobalError("حذف گفتگو ناموفق بود: " + firebaseError(err));
+      }
+    };
+
+    list.appendChild(item);
+  });
+}
+
+function renderMessages() {
+  const chat = currentChat();
+  const container = el("messages");
+  el("chatTitleLabel").textContent = chat?.title || "";
+
+  if (!chat) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const wrap = document.createElement("div");
+  wrap.className = "messages-inner";
+
+  chat.messages.forEach(m => {
+    const row = document.createElement("div");
+    row.className = "bubble-row " + m.role;
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble " + m.role;
+    bubble.textContent = m.text || "";
+
+    row.appendChild(bubble);
+    wrap.appendChild(row);
+  });
+
+  if (state.sending) {
+    const row = document.createElement("div");
+    row.className = "bubble-row assistant";
+    row.innerHTML = `<div class="bubble assistant">در حال آماده‌سازی پاسخ...</div>`;
+    wrap.appendChild(row);
+  }
+
+  container.innerHTML = "";
+  container.appendChild(wrap);
+  container.scrollTop = container.scrollHeight;
+}
+
+function showChatError(message) {
+  const box = document.createElement("div");
+  box.className = "error-bubble";
+  box.style.maxWidth = "680px";
+  box.style.margin = "10px auto";
+  box.textContent = message;
+  el("messages").appendChild(box);
+}
+
+/* ---------------- رابط موبایل ---------------- */
+
+function closeSidebar() {
+  el("sidebar").classList.remove("open");
+  el("sidebarOverlay").classList.add("hidden");
+}
+
+el("menuBtn").onclick = () => {
+  el("sidebar").classList.add("open");
+  el("sidebarOverlay").classList.remove("hidden");
+};
+el("sidebarOverlay").onclick = closeSidebar;
+
+/* ---------------- پیام / هوش مصنوعی ----------------
+   کلید API داخل GitHub Pages قرار نمی‌گیرد.
+   index.html فقط به Cloudflare Worker متصل می‌شود.
+*/
+const AI_API_URL = "https://karemahdi-ai.niknammahdi91.workers.dev";
+
+async function askAI(messages) {
+  const response = await fetch(AI_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages })
+  });
+
+  let data = null;
+  try { data = await response.json(); } catch (_) {}
+
+  if (!response.ok) {
+    throw new Error(data?.error || "ارتباط با سرویس هوش مصنوعی برقرار نشد.");
+  }
+
+  if (!data?.reply) {
+    throw new Error("پاسخ معتبری از هوش مصنوعی دریافت نشد.");
+  }
+
+  return data.reply;
+}
+
+async function sendMessage() {
+  const chat = currentChat();
+  const text = el("messageInput").value.trim();
+
+  if (!chat || state.sending || !text) return;
+
+  chat.messages.push({
+    id: Date.now().toString(36),
+    role: "user",
+    text,
+    timestamp: Date.now()
+  });
+
+  if (chat.title === "گفتگوی جدید") {
+    chat.title = text.slice(0, 32);
+  }
+
+  el("messageInput").value = "";
+  state.sending = true;
+  renderChatList();
+  renderMessages();
+
+  try {
+    await saveCurrentChat();
+
+    const messagesForAI = chat.messages
+      .filter(m => (m.role === "user" || m.role === "assistant") && m.text)
+      .slice(-20)
+      .map(m => ({
+        role: m.role,
+        content: m.text
+      }));
+
+    const reply = await askAI(messagesForAI);
+
+    chat.messages.push({
+      id: Date.now().toString(36) + "-a",
+      role: "assistant",
+      text: reply,
+      timestamp: Date.now()
+    });
+
+    await saveCurrentChat();
+  } catch (err) {
+    console.error("AI ERROR:", err);
+
+    chat.messages.push({
+      id: Date.now().toString(36) + "-e",
+      role: "assistant",
+      text: "فعلاً نتوانستم پاسخ را دریافت کنم. دوباره تلاش کن.",
+      timestamp: Date.now()
+    });
+
+    try { await saveCurrentChat(); }
+    catch (saveErr) { console.error("SAVE AFTER AI ERROR:", saveErr); }
+  } finally {
+    state.sending = false;
+    renderChatList();
+    renderMessages();
+  }
+}
+
+el("sendBtn").onclick = sendMessage;
+el("messageInput").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+/* ---------------- شروع Firebase ---------------- */
+
+(async function start() {
+  await initFirebase();
+
+  if (!firebaseReady) {
+    showAuth();
+    return;
+  }
+
+  auth.onAuthStateChanged(async user => {
+    try {
+      if (user) {
+        state.user = user;
+        showChat();
+        renderChatList();
+        renderMessages();
+
+        loadUserChats()
+          .then(() => {
+            renderChatList();
+            renderMessages();
+          })
+          .catch(err => {
+            console.error("AUTH LOAD CHATS ERROR:", err);
+            console.error("AUTH LOAD CHATS ERROR:", err);
+          });
+      } else {
+        state.user = null;
+        state.chats = [];
+        state.currentChatId = null;
+        showAuth();
+      }
+    } catch (err) {
+      console.error("AUTH STATE ERROR:", err);
+      showGlobalError("خطا هنگام بارگذاری اطلاعات کاربر: " + firebaseError(err));
+      showAuth();
+    }
+  });
+})();
+</script>
+</body>
+</html>
